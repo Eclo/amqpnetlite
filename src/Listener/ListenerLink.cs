@@ -117,10 +117,24 @@ namespace Amqp.Listener
         /// <summary>
         /// Sends a message. This call is non-blocking and it does not wait for acknowledgements.
         /// </summary>
+        /// <param name="message"></param>
+        public void SendMessage(Message message)
+        {
+            this.SendMessage(message, null);
+        }
+
+        /// <summary>
+        /// Sends a message with an optional buffer as the message payload.
+        /// </summary>
         /// <param name="message">The message to be sent.</param>
         /// <param name="buffer">The serialized buffer of the message. It is null, the message is serialized.</param>
         public void SendMessage(Message message, ByteBuffer buffer)
         {
+            if (this.role)
+            {
+                throw new AmqpException(ErrorCode.NotAllowed, "Cannot send a message over a receiving link.");
+            }
+
             Delivery delivery = new Delivery()
             {
                 Handle = this.Handle,
