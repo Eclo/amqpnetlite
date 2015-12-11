@@ -22,11 +22,59 @@ namespace Amqp
 
     public class Message
     {
-        public Map MessageAnnotations { get; set; }
+        // List of the fields defined in Properties
+        // Most commonly used properties have getter/setter
+        // To access others, user can access the Properties list
+        List properties;
 
-        public Properties Properties { get; set; }
+        public string MessageId
+        {
+            get { return (string)this.Properties[0]; }
+            set { this.Properties[0] = value; }
+        }
 
-        public Map ApplicationProperties { get; set; }
+        public string To
+        {
+            get { return (string)this.Properties[2]; }
+            set { this.Properties[2] = value; }
+        }
+
+        public string Subject
+        {
+            get { return (string)this.Properties[3]; }
+            set { this.Properties[3] = value; }
+        }
+
+        public string CorrelationId
+        {
+            get { return (string)this.Properties[5]; }
+            set { this.Properties[5] = value; }
+        }
+
+        public Map MessageAnnotations
+        {
+            get;
+            set;
+        }
+
+        public List Properties
+        {
+            get
+            {
+                if (this.properties == null)
+                {
+                    this.properties = new List() { null, null, null, null, null, null, null, null, null, null, null, null, null };
+                }
+
+                return this.properties;
+            }
+        }
+
+        public Map ApplicationProperties
+        {
+            get;
+            set;
+        }
 
         public object Body { get; set; }
 
@@ -68,7 +116,13 @@ namespace Amqp
                 }
                 else if (section.Descriptor.Equals(0x73ul))
                 {
-                    message.Properties = new Properties((List)section.Value);
+                    List list = (List)section.Value;
+                    for (int i = list.Count; i < 13; i++)
+                    {
+                        list.Add(null);
+                    }
+                    
+                    message.properties = list;
                 }
                 else if (section.Descriptor.Equals(0x74ul))
                 {
