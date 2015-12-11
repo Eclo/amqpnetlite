@@ -41,7 +41,7 @@ namespace Amqp
         internal const byte DetachReceived = 8;
 
         internal const string Name = "netmf-lite";
-        internal const int MaxFrameSize = 1 * 512;
+        internal const int MaxFrameSize = 1024;
         const uint defaultWindowSize = 100u;
 
         string host;
@@ -222,17 +222,14 @@ namespace Amqp
 #endif
 
                     break;
-
                 case 0x11:  // begin
-                    this.nextOutgoingId = (uint)fields[1];
-                    this.inWindow = (uint)fields[2];
-                    this.outWindow = (uint)fields[3];
+                    this.nextIncomingId = (uint)fields[1];
+                    this.outWindow = (uint)fields[2];
                     this.state |= BeginReceived;
 #if TRACE
                     Microsoft.SPOT.Debug.Print("RECV begin (next-outgoing-id:" + this.nextOutgoingId + ", outgoing-window:" + this.outWindow + ", incoming-window:" + this.inWindow + ")");
 #endif
                     break;
-
                 case 0x12:  // attach
                 {
                     bool role = (bool)fields[2];
@@ -266,7 +263,7 @@ namespace Amqp
                     }
 
 #if TRACE
-                        Microsoft.SPOT.Debug.Print("RECV flow (next-in-id:" + this.nextIncomingId + ", in-window:" + this.inWindow + ", next-out-id:" + this.nextOutgoingId + ", out-window:" + this.outWindow + ")");
+                    Microsoft.SPOT.Debug.Print("RECV flow (next-in-id:" + this.nextIncomingId + ", in-window:" + this.inWindow + ", next-out-id:" + this.nextOutgoingId + ", out-window:" + this.outWindow + ")");
 #endif
 
                     Sender sender = this.sender;
