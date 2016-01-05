@@ -50,12 +50,14 @@
   <ItemGroup>
     <Compile Include="AmqpBitConverter.cs" />
     <Compile Include="ByteBuffer.cs" />
+    <Compile Include="NetMFLiteSIM800\ErrorCode.cs" />
+    <Compile Include="NetMFLiteSIM800\Extensions.cs" />
+    <Compile Include="NetMFLiteSIM800\Link.cs" />
     <Compile Include="NetMFLiteSIM800\Message.cs" />
     <Compile Include="NetMFLiteSIM800\Properties.cs" />
     <Compile Include="NetMFLiteSIM800\Receiver.cs" />
     <Compile Include="NetMFLiteSIM800\Sender.cs" />
     <Compile Include="NetMFLiteSIM800\Fx.cs" />
-    <Compile Include="NetMFLiteSIM800\Extensions.cs" />
     <Compile Include="NetMF\List.cs" />
     <Compile Include="NetMF\Map.cs" />
     <Compile Include="NetMFLiteSIM800\Client.cs" />
