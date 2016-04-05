@@ -15,65 +15,52 @@
 //  limitations under the License.
 //  ------------------------------------------------------------------------------------
 
-namespace Amqp
+namespace Amqp.Listener
 {
+    using System.Security.Cryptography.X509Certificates;
+    using System.Security.Principal;
+
     /// <summary>
-    /// Contains the AMQP settings for a connection.
+    /// Represents an client identity established by SSL client certificate authentication.
     /// </summary>
-    public class AmqpSettings
+    public class X509Identity : IIdentity
     {
-        /// <summary>
-        /// Gets or sets the open.max-frame-size field.
-        /// </summary>
-        public int MaxFrameSize
+        internal X509Identity(X509Certificate certificate)
         {
-            get;
-            set;
+            this.Certificate = certificate;
         }
 
         /// <summary>
-        /// Gets or sets the open.container-id field.
+        /// Gets the client certificate.
         /// </summary>
-        public string ContainerId
+        public X509Certificate Certificate
         {
             get;
-            set;
+            private set;
         }
 
         /// <summary>
-        /// Gets or sets the open.hostname field.
+        /// Gets the type of authentication used. ("X509").
         /// </summary>
-        public string HostName
+        public string AuthenticationType
         {
-            get;
-            set;
+            get { return "X509"; }
         }
 
         /// <summary>
-        /// Gets or sets the open.channel-max field (less by one).
+        /// Gets a value that indicates whether the user has been authenticated.
         /// </summary>
-        public ushort MaxSessionsPerConnection
+        public bool IsAuthenticated
         {
-            get;
-            set;
+            get { return true; }
         }
 
         /// <summary>
-        /// Gets or sets the begin.handle-max field (less by one).
+        /// Gets the name of the identity.
         /// </summary>
-        public int MaxLinksPerSession
+        public string Name
         {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Gets or sets the open.idle-time-out field.
-        /// </summary>
-        public int IdleTimeout
-        {
-            get;
-            set;
+            get { return this.Certificate.Subject; }
         }
     }
 }

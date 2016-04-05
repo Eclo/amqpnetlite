@@ -19,6 +19,7 @@ namespace Amqp.Serialization
 {
     using System;
     using System.Collections;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Reflection;
@@ -35,14 +36,14 @@ namespace Amqp.Serialization
     public sealed class AmqpSerializer
     {
         static readonly AmqpSerializer instance = new AmqpSerializer();
-        readonly Dictionary<Type, SerializableType> typeCache;
+        readonly ConcurrentDictionary<Type, SerializableType> typeCache;
 
         /// <summary>
         /// Initializes a new instance of the AmqpSerializer class.
         /// </summary>
         public AmqpSerializer()
         {
-            this.typeCache = new Dictionary<Type, SerializableType>();
+            this.typeCache = new ConcurrentDictionary<Type, SerializableType>();
         }
 
         /// <summary>
@@ -143,7 +144,7 @@ namespace Amqp.Serialization
                 serialiableType = this.CompileType(type, describedOnly);
                 if (serialiableType != null)
                 {
-                    this.typeCache[type] = serialiableType;
+                    serialiableType = this.typeCache.GetOrAdd(type, serialiableType);
                 }
             }
 
@@ -183,7 +184,7 @@ namespace Amqp.Serialization
                                 type.Name, contractAttribute.Encoding, type.BaseType().Name, baseType.Encoding));
                     }
 
-                    this.typeCache[type.BaseType()] = baseType;
+                    baseType = this.typeCache.GetOrAdd(type.BaseType(), baseType);
                 }
             }
 
@@ -341,20 +342,34 @@ namespace Amqp.Serialization
                 return SerializableType.CreateObjectType(type);
             }
 
+            if (typeof(Described).IsAssignableFrom(type))
+            {
+                return SerializableType.CreateObjectType(type);
+            }
+
             if (typeof(IAmqpSerializable).IsAssignableFrom(type))
             {
                 return SerializableType.CreateAmqpSerializableType(this, type);
             }
 
-            if (typeof(Described).IsAssignableFrom(type))
+            if (type.IsGenericType() && type.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
-                return SerializableType.CreateAmqpDescribedType(this, type);
+                Type[] argTypes = type.GetGenericArguments();
+                Fx.Assert(argTypes.Length == 1, "Nullable type must have one argument");
+                Type argType = argTypes[0];
+                if (argType.IsEnum())
+                {
+                    return CompileEnumType(argType);
+                }
+                else
+                {
+                    return SerializableType.CreateObjectType(type);
+                }
             }
 
-            SerializableType nullable = this.CompileNullableTypes(type);
-            if (nullable != null)
+            if (type.IsEnum())
             {
-                return nullable;
+                return CompileEnumType(type);
             }
 
             SerializableType collection = this.CompileCollectionTypes(type);
@@ -366,17 +381,10 @@ namespace Amqp.Serialization
             return null;
         }
 
-        SerializableType CompileNullableTypes(Type type)
+        SerializableType CompileEnumType(Type type)
         {
-            if (type.IsGenericType() &&
-                type.GetGenericTypeDefinition() == typeof(Nullable<>))
-            {
-                Type[] argTypes = type.GetGenericArguments();
-                Fx.Assert(argTypes.Length == 1, "Nullable type must have one argument");
-                return SerializableType.CreateNullableType(type, this.GetType(argTypes[0]));
-            }
-
-            return null;
+            SerializableType underlyingType = GetType(Enum.GetUnderlyingType(type));
+            return SerializableType.CreateEnumType(type, underlyingType);
         }
 
         SerializableType CompileCollectionTypes(Type type)

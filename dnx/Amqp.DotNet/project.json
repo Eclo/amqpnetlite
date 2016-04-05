@@ -1,5 +1,5 @@
 {
-  "version": "1.1.5",
+  "version": "1.1.8",
   "description": "Amqp 1.0 Class Library for .NETFramework, .NETPlatform, and WinRT",
   "authors": [ "xinchen" ],
   "tags": [ "AMQP Micro-Framework netmf netcf iot winrt coreclr corefx .NetPlatform .NetCore UWP" ],
@@ -64,7 +64,9 @@
         "System.Reflection.Emit.Lightweight": "4.0.1-beta-23409",
         "System.Reflection.Extensions": "4.0.1-beta-23409",
         "System.Reflection.TypeExtensions": "4.0.1-beta-23409",
-        "System.Runtime.Serialization.Primitives": "4.0.11-beta-23409"
+        "System.Runtime.Serialization.Primitives": "4.0.11-beta-23409",
+        "System.Security.Claims": "4.0.1-beta-23509",
+        "System.Security.Principal":  "4.0.1-beta-23509"
       }
     }
   }
