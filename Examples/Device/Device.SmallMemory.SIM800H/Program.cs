@@ -22,6 +22,7 @@ using System.Threading;
 using Eclo.NETMF.SIM800H;
 using Microsoft.SPOT.Hardware;
 using System.IO.Ports;
+using Amqp.Types;
 
 namespace Device.SmallMemory
 {
@@ -42,6 +43,11 @@ namespace Device.SmallMemory
         const string authUser = "<replace>";
         const string authPassword = "<replace>";
 
+        // user/pass to be authenticated with Azure IoT hub
+        // if using a shared access signature like SharedAccessSignature sr=myhub.azure-devices.net&sig=H4Rm2%2bjdBr84lq5KOddD9YpOSC8s7ZSe9SygErVuPe8%3d&se=1444444444&skn=userNameHere
+        // user will be userNameHere and password the complete SAS string 
+        const string iotUser = "<replace>";
+        const string sasToken = "<replace>";
 
         public static void Main()
         {
@@ -63,21 +69,29 @@ namespace Device.SmallMemory
         {
             const int nMsgs = 2;
 
-            Client client = new Client(iotHubName + ".azure-devices.net", 5671, true, authUser + "@sas.root." + iotHubName, authPassword);
+
+            // Map IotHub settings to AMQP protocol settings
+            string hostName = iotHubName + ".azure-devices.net";
+            int port = 5671;
+            string userName = iotUser + "@sas.root." + iotHubName;
+            string password = sasToken;
+            string senderAddress = "devices/" + device + "/messages/events";
+            string receiverAddress = "devices/" + device + "/messages/deviceBound";
+
+            Client client = new Client();
+            client.OnError += client_OnError;
+            client.Connect(hostName, port, true, userName, password);
 
             int count = 0;
             ManualResetEvent done = new ManualResetEvent(false);
-            Receiver receiver = client.GetReceiver("devices/" + device + "/messages/deviceBound");
+            Receiver receiver = client.CreateReceiver("devices/" + device + "/messages/deviceBound");
             receiver.Start(20, (r, m) =>
             {
                 r.Accept(m);
                 if (++count >= nMsgs) done.Set();
             });
 
-
-
-
-            Sender sender = client.GetSender("devices/" + device + "/messages/events");
+            Sender sender = client.CreateSender("devices/" + device + "/messages/events");
             for (int i = 0; i < nMsgs; i++)
             {
                 sender.Send(new Message() { Body = Guid.NewGuid().ToString() });
@@ -231,5 +245,9 @@ namespace Device.SmallMemory
             }
         }
 
+        static void client_OnError(Client client, Link link, Symbol error)
+        {
+            Microsoft.SPOT.Debug.Print((link != null ? "Link" : "Client") + " was closed due to error " + (error ?? "[unknown]"));
+        }
     }
 }

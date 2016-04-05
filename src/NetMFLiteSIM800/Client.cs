@@ -22,6 +22,16 @@ namespace Amqp
     using System.Threading;
     using Amqp.Types;
     using Eclo.NETMF.SIM800H;
+
+
+    /// <summary>
+    /// The event handler that is invoked when an AMQP object is closed unexpectedly.
+    /// </summary>
+    /// <param name="client">The client.</param>
+    /// <param name="link">The link. If null, the error applies to the client object.</param>
+    /// <param name="error">The error condition due to which the object was closed.</param>
+    public delegate void ErrorEventHandler(Client client, Link link, Symbol error);
+
     delegate bool Condition(object state);
 
     /// <summary>
@@ -69,6 +79,11 @@ namespace Amqp
         uint nextIncomingId;
         uint deliveryId;
         Link[] links;
+
+        /// <summary>
+        /// The event that is raised when any AMQP object is closed unexpectedly.
+        /// </summary>
+        public event ErrorEventHandler OnError;
 
         /// <summary>
         /// Current idle timeout for a connection (in milliseconds).
@@ -124,7 +139,7 @@ namespace Amqp
         /// <param name="password">If set, the password for authentication.</param>
         public void Connect(string host, int port, bool useSsl, string userName, string password)
         {
-            this.transport = Connect(host, port, useSsl);
+            this.transport = Extensions.Connect(host, port, useSsl);
 
             byte[] header = new byte[8] { (byte)'A', (byte)'M', (byte)'Q', (byte)'P', 0, 1, 0, 0 };
             byte[] retHeader;
@@ -162,16 +177,17 @@ namespace Amqp
                 header[4] = 0;
         }
 
-            this.state = OpenSent | BeginSent;
             this.transport.Write(header, 0, 8);
             Fx.DebugPrint(true, 0, "AMQP", new List { string.Concat(header[5], header[6], header[7]) }, header[4]);
 
             // perform open 
+            this.state |= OpenSent;
             var open = new List() { Guid.NewGuid().ToString(), this.hostName ?? host, MaxFrameSize, (ushort)0 };
             this.WriteFrame(0, 0, 0x10, open);
             Fx.DebugPrint(true, 0, "open", open, "container-id", "host-name", "max-frame-size", "channel-max", "idle-time-out");
 
             // perform begin
+            this.state |= BeginSent;
             var begin = new List() { null, this.nextOutgoingId, this.inWindow, this.outWindow, (uint)(this.links.Length - 1) };
             this.WriteFrame(0, 0, 0x11, begin);
             Fx.DebugPrint(true, 0, "begin", begin, "remote-channel", "next-outgoing-id", "incoming-window", "outgoing-window", "handle-max");
@@ -330,6 +346,15 @@ namespace Amqp
             Fx.DebugPrint(true, 0, "disposition", disposition, "role", "first", "last");
         }
 
+        void RaiseErrorEvent(Link link, Symbol error)
+        {
+            var onError = this.OnError;
+            if (onError != null)
+            {
+                onError.Invoke(this, link, error);
+            }
+        }
+
         uint GetLinkHandle(out int index)
             {
             index = -1;
@@ -410,6 +435,7 @@ namespace Amqp
                     this.transport.Close();
                     this.state = 0xFF;
                     this.Close();
+                    this.RaiseErrorEvent(null, new Symbol("amqp:connection:reset"));
                 }
 
                 this.signal.Set();
@@ -542,6 +568,7 @@ namespace Amqp
                     if ((link.State & DetachSent) == 0)
                     {
                         this.CloseLink(link);
+                        this.RaiseErrorEvent(link, GetError(fields, 2));
                     }
                     break;
                 }
@@ -561,6 +588,7 @@ namespace Amqp
                     if ((this.state & CloseSent) == 0)
                     {
                         this.Close();
+                        this.RaiseErrorEvent(null, GetError(fields, 0));
                     }
                     break;
                 default:
@@ -715,49 +743,6 @@ namespace Amqp
             return buffer;
         }
 
-        static NetworkStream Connect(string host, int port, bool useSsl)
-        {
-            var ipHostEntry = Dns.GetHostEntry(host);
-            Socket socket = null;
-            SocketException exception = null;
-            foreach (var ipAddress in ipHostEntry.AddressList)
-            {
-                if (ipAddress == null) continue;
-
-                socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                try
-                {
-                    socket.Connect(new IPEndPoint(ipAddress, port));
-                    exception = null;
-                    break;
-            }
-                catch (SocketException socketException)
-                {
-                    exception = socketException;
-                    socket = null;
-                }
-        }
-
-            if (exception != null)
-        {
-                throw exception;
-        }
-
-            NetworkStream stream;
-            if (useSsl)
-            {
-                SslStream sslStream = new SslStream(socket);
-                sslStream.AuthenticateAsClient(host, null, SslVerification.VerifyPeer, SslProtocols.Default);
-                stream = sslStream;
-            }
-            else
-        {
-                stream = new NetworkStream(socket, true);
-            }
-
-            return stream;
-        }
-
         static Symbol[] GetSymbolMultiple(object multiple)
         {
             Symbol[] array = multiple as Symbol[];
@@ -780,6 +765,24 @@ namespace Amqp
             // assume both are 8 bytes
             return b1[0] == b2[0] && b1[1] == b2[1] && b1[2] == b2[2] && b1[3] == b2[3]
                 && b1[4] == b2[4] && b1[5] == b2[5] && b1[6] == b2[6] && b1[7] == b2[7];
+        }
+
+        static Symbol GetError(List fields, int errorIndex)
+        {
+            if (fields.Count > errorIndex && fields[errorIndex] != null)
+            {
+                var dv = fields[errorIndex] as DescribedValue;
+                if (dv != null && dv.Descriptor.Equals(0x1dul))
+                {
+                    List error = (List)dv.Value;
+                    if (error.Count > 0)
+                    {
+                        return (Symbol)error[0];
+                    }
+                }
+            }
+
+            return null;
         }
 
         static void OnHeartBeatTimer(object state)

@@ -126,7 +126,7 @@ namespace Amqp
             {
                 byte[] frameBuffer = socket.ReadFixedSizeBuffer(size);
                 ByteBuffer buffer = new ByteBuffer(frameBuffer, 0, size, size);
-                Fx.AssertAndThrow(1001, Encoder.ReadFormatCode(buffer) == FormatCode.Described);
+                Fx.AssertAndThrow(ErrorCode.ClientHandlInUse, Encoder.ReadFormatCode(buffer) == FormatCode.Described);
 
                 code = Encoder.ReadULong(buffer, Encoder.ReadFormatCode(buffer));
                 fields = Encoder.ReadList(buffer,Encoder.ReadFormatCode(buffer));
@@ -157,11 +157,11 @@ namespace Amqp
             List f;
             ByteBuffer p;
             socket.ReadFrame(out t, out c, out d, out f, out p);
-            Fx.AssertAndThrow(1002, t == frameType);
-            Fx.AssertAndThrow(1003, c == channel);
-            Fx.AssertAndThrow(1004, d == code);
-            Fx.AssertAndThrow(1005, f != null);
-            Fx.AssertAndThrow(1006, p == null);
+            Fx.AssertAndThrow(ErrorCode.ClientWaitTimeout, t == frameType);
+            Fx.AssertAndThrow(ErrorCode.ClientInitializeWrongBodyCount, c == channel);
+            Fx.AssertAndThrow(ErrorCode.ClientInitializeWrongSymbol, d == code);
+            Fx.AssertAndThrow(ErrorCode.ClientInitializeHeaderCheckFailed, f != null);
+            Fx.AssertAndThrow(ErrorCode.ClientInitializeSaslFailed, p == null);
             return f;
         }
 
@@ -230,6 +230,20 @@ namespace Amqp
             }
 
             throw new Exception("object is not a multiple type");
+        }
+
+        public static void Write(this GprsSocket socket, byte[] buffer, int offset, int count)
+        {
+            socket.Send(buffer, offset, count);
+        }
+
+        public static void Flush(this GprsSocket socket)
+        {
+        }
+
+        public static int Read(this GprsSocket socket, byte[] buffer, int offset, int count)
+        {
+            return socket.Read(buffer, offset, count);
         }
     }
 }

@@ -35,8 +35,8 @@
     <Compile Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Eclo.NetMF.SIM800H, Version=1.1.66.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\nugetpackages\Eclo.NETMF.SIM800H.1.1.66\lib\netmf44\Eclo.NetMF.SIM800H.dll</HintPath>
+    <Reference Include="Eclo.NETMF.SIM800H, Version=1.1.67.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\..\nugetpackages\Eclo.NETMF.SIM800H.1.1.67\lib\netmf44\Eclo.NETMF.SIM800H.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.SPOT.Hardware" />
@@ -46,9 +46,9 @@
     <Reference Include="System.IO" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Amqp.Lite.SIM800.NetMF44.csproj">
+    <ProjectReference Include="..\..\..\src\Amqp.Micro.SIM800.NetMF44.csproj">
       <Project>{28B4B8DE-43BD-4BF0-A160-A28CE9EA630D}</Project>
-      <Name>Amqp.Lite.SIM800.NetMF44</Name>
+      <Name>Amqp.Micro.SIM800.NetMF44</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

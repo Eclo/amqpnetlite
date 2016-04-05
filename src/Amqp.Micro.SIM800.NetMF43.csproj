@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <AssemblyName>Amqp.Lite.NetMF43</AssemblyName>
+    <AssemblyName>Amqp.Micro.NetMF43</AssemblyName>
     <OutputType>Library</OutputType>
     <RootNamespace>Amqp</RootNamespace>
     <ProjectTypeGuids>{b69e3092-b931-443c-abe7-7e7b65f2a37f};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -34,8 +34,8 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
-    <Reference Include="Eclo.NetMF.SIM800H, Version=1.1.66.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\nugetpackages\Eclo.NETMF.SIM800H.1.1.66\lib\netmf43\Eclo.NetMF.SIM800H.dll</HintPath>
+    <Reference Include="Eclo.NETMF.SIM800H, Version=1.1.67.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\nugetpackages\Eclo.NETMF.SIM800H.1.1.67\lib\netmf43\Eclo.NETMF.SIM800H.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.SPOT.Hardware" />
