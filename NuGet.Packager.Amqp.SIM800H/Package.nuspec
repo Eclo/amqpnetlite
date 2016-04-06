@@ -2,8 +2,8 @@
 <package >
   <metadata>
     <id>Eclo.NETMF.AMQPNetMicro.SIM800H</id>
-    <version>1.1.6-preview-02</version>
-    <title>Compact version of AMQP.Net Lite for SIM800H in NETMF</title>
+    <version>1.1.6</version>
+    <title>Compact AMQP.Net Lite for SIM800H in NETMF</title>
     <authors>Eclo Solutions</authors>
     <owners>Eclo Solutions</owners>
     <description>
