@@ -19,7 +19,6 @@ namespace Amqp
 {
     using System;
     using Amqp.Types;
-    using Microsoft.SPOT.Net.Security;
     using Eclo.NETMF.SIM800H;
     static class Extensions
     {
@@ -108,18 +107,27 @@ namespace Amqp
         public static void ReadFrame(this GprsSocket socket, out byte frameType, out ushort channel,
             out ulong code, out List fields, out ByteBuffer payload)
         {
+#if TRACE
             Microsoft.SPOT.Debug.Print("ReadFrame");
-
+#endif
 
             byte[] headerBuffer = socket.ReadFixedSizeBuffer(8);
             int size = AmqpBitConverter.ReadInt(headerBuffer, 0);
-            Microsoft.SPOT.Debug.Print("size: " + size);
 
+#if TRACE
+            Microsoft.SPOT.Debug.Print("size: " + size);
+#endif
             frameType = headerBuffer[5];    // TOOD: header EXT
+
+#if TRACE
             Microsoft.SPOT.Debug.Print("ftype: " + frameType);
+#endif
 
             channel = (ushort)(headerBuffer[6] << 8 | headerBuffer[7]);
+
+#if TRACE
             Microsoft.SPOT.Debug.Print("channel: " + channel);
+#endif
 
             size -= 8;
             if (size > 0)
@@ -149,7 +157,9 @@ namespace Amqp
 
         public static List ReadFrameBody(this GprsSocket socket, byte frameType, ushort channel, ulong code)
         {
+#if TRACE
             Microsoft.SPOT.Debug.Print("ReadFrameBody");
+#endif
 
             byte t;
             ushort c;
@@ -169,13 +179,18 @@ namespace Amqp
 
         public static byte[] ReadFixedSizeBuffer(this GprsSocket socket, int size)
         {
+#if TRACE
             Microsoft.SPOT.Debug.Print("ReadFixedSizeBuffer: " + size);
+#endif
 
+#if TRACE
             // sanity check
             if(size > 512)
             {
+
                 Microsoft.SPOT.Debug.Print("WTF?!");
             }
+#endif
 
             byte[] buffer = new byte[size];
             int offset = 0;

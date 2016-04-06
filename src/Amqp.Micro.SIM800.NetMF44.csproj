@@ -40,12 +40,10 @@
     </Reference>
     <Reference Include="Microsoft.SPOT.Hardware" />
     <Reference Include="Microsoft.SPOT.Hardware.SerialPort" />
-    <Reference Include="Microsoft.SPOT.Native">
+    <Reference Include="Microsoft.SPOT.Native" Condition=" '$(Configuration)' == 'Debug' ">
     </Reference>
-    <Reference Include="Microsoft.SPOT.Net.Security" />
     <Reference Include="System" />
     <Reference Include="System.IO" />
-    <Reference Include="System.Net.Security" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AmqpBitConverter.cs" />
@@ -74,4 +72,17 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <PropertyGroup>
+    <PostBuildEvent>:: copy output files to nuget package project
+xcopy  /i /y  "$(TargetDir)*.*"  "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf44"
+cd "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf44"
+del *.tmp
+
+xcopy  /i /y  "$(TargetDir)be\*.*"  "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf44\be"
+cd "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf44\be"
+del *.dll
+xcopy  /i /y  "$(TargetDir)le\*.*"  "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf44\le"
+cd "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf44\le"
+del *.dll</PostBuildEvent>
+  </PropertyGroup>
 </Project>

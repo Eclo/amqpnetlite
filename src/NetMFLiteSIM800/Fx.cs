@@ -19,14 +19,15 @@ namespace Amqp
 {
     using System;
     using System.Diagnostics;
-    using Microsoft.SPOT;
 
     static class Fx
     {
         [Conditional("DEBUG")]
         public static void Assert(bool condition, string message)
         {
-            Debug.Assert(condition, message);
+#if DEBUG
+            Microsoft.SPOT.Debug.Assert(condition, message);
+#endif
         }
 
         public static void AssertAndThrow(ErrorCode id, bool condition)
