@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Eclo.NETMF.AMQPNetMicro.SIM800H</id>
+    <version>1.1.6-preview-02</version>
+    <title>Compact version of AMQP.Net Lite for SIM800H in NETMF</title>
+    <authors>Eclo Solutions</authors>
+    <owners>Eclo Solutions</owners>
+    <description>
+      This is a compact version of AMQP.Net Lite for .NET Micro Framework build for Eclo Solutions SIM800H IoT module.
+    </description>
+    <releaseNotes>
+      This package is a special build for Eclo Solutions SIM800H IoT module. The code is entirely based in the original source for AMQP.Net Lite for .NET Micro Framework. Repository of AMQP.Net Lite is at https://github.com/Azure/amqpnetlite.
+    </releaseNotes>
+    <summary>
+    </summary>
+    <projectUrl>https://github.com/Eclo/amqpnetlite/tree/netmf-tiny-sim800h</projectUrl>
+    <iconUrl>https://nuget.org/Content/Images/packageDefaultIcon-50x50.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright 2016 Eclo Solutions</copyright>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="Microsoft.SPOT.Hardware" />
+      <frameworkAssembly assemblyName="Microsoft.SPOT.Hardware.SerialPort" />
+      <frameworkAssembly assemblyName="System" />
+      <frameworkAssembly assemblyName="System.IO" />
+    </frameworkAssemblies>
+    <references></references>
+    <tags>NETMF, Micro Framework, SIM800, AMQP</tags>
+    <dependencies>
+      <dependency id="Eclo.NETMF.SIM800H" version="1.1.67" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="lib\" target="lib" />
+  </files>
+</package>

@@ -77,12 +77,16 @@
 xcopy  /i /y  "$(TargetDir)*.*"  "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf43"
 cd "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf43"
 del *.tmp
+del Eclo.NETMF.SIM800H*.*
 
 xcopy  /i /y  "$(TargetDir)be\*.*"  "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf43\be"
 cd "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf43\be"
 del *.dll
+del Eclo.NETMF.SIM800H*.*
+
 xcopy  /i /y  "$(TargetDir)le\*.*"  "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf43\le"
 cd "$(SolutionDir)\NuGet.Packager.Amqp.SIM800H\lib\netmf43\le"
-del *.dll</PostBuildEvent>
+del *.dll
+del Eclo.NETMF.SIM800H*.*</PostBuildEvent>
   </PropertyGroup>
 </Project>
