@@ -108,6 +108,8 @@ namespace Amqp
 
         internal void Abort(Error error)
         {
+            this.Error = error;
+
             this.OnAbort(error);
 
             if (this.state != LinkState.End)
@@ -144,6 +146,8 @@ namespace Amqp
 
         internal bool OnDetach(Detach detach)
         {
+            this.Error = detach.Error;
+
             lock (this.ThisLock)
             {
                 if (this.state == LinkState.DetachSent)
@@ -162,9 +166,12 @@ namespace Amqp
                 }
 
                 this.OnClose(detach.Error);
-                this.NotifyClosed(detach.Error);
-                return true;
             }
+
+            this.session.RemoveLink(this, detach.Handle);
+            this.NotifyClosed(detach.Error);
+
+            return true;
         }
 
         internal abstract void OnFlow(Flow flow);
@@ -217,8 +224,14 @@ namespace Amqp
 
         internal void SendFlow(uint deliveryCount, uint credit, bool drain)
         {
-            Flow flow = new Flow() { Handle = this.handle, DeliveryCount = deliveryCount, LinkCredit = credit, Drain = drain };
-            this.session.SendFlow(flow);
+            lock (this.ThisLock)
+            {
+                if (!this.IsDetaching)
+                {
+                    Flow flow = new Flow() { Handle = this.handle, DeliveryCount = deliveryCount, LinkCredit = credit, Drain = drain };
+                    this.session.SendFlow(flow);
+                }
+            }
         }
 
         internal void SendAttach(bool role, uint initialDeliveryCount, Attach attach)

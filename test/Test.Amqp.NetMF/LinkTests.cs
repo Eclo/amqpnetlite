@@ -95,11 +95,11 @@ namespace Test.Amqp
         {
             string testName = "ConnectionFrameSize";
             const int nMsgs = 200;
-            Connection connection = new Connection(address);
+            int frameSize = 4 * 1024;
+            Connection connection = new Connection(address, null, new Open() { ContainerId = "c1", MaxFrameSize = (uint)frameSize }, null);
             Session session = new Session(connection);
             SenderLink sender = new SenderLink(session, "sender-" + testName, "q1");
 
-            int frameSize = 16 * 1024;
             for (int i = 0; i < nMsgs; ++i)
             {
                 Message message = new Message(new string('A', frameSize + (i - nMsgs / 2)));
@@ -771,6 +771,28 @@ namespace Test.Amqp
             ReceiverLink receiver = new ReceiverLink(session, "receiver", "q1");
             sender.Close(0);
             receiver.Close(0);
+            session.Close(0);
+            connection.Close();
+            Assert.IsTrue(connection.Error == null, "connection has error!");
+        }
+
+#if NETFX || NETFX_CORE
+        [TestMethod]
+#endif
+        public void TestMethod_LinkReopen()
+        {
+            string testName = "LinkReopen";
+
+            Connection connection = new Connection(address);
+            Session session = new Session(connection);
+            SenderLink sender = new SenderLink(session, "sender", "q1");
+            sender.Send(new Message("test") { Properties = new Properties() { MessageId = testName } });
+            sender.Close();
+
+            sender = new SenderLink(session, "sender", "q1");
+            sender.Send(new Message("test2") { Properties = new Properties() { MessageId = testName } });
+            sender.Close();
+
             session.Close(0);
             connection.Close();
             Assert.IsTrue(connection.Error == null, "connection has error!");

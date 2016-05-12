@@ -15,14 +15,27 @@
 //  limitations under the License.
 //  ------------------------------------------------------------------------------------
 
-using System.Reflection;
+namespace ServiceBus.Topic
+{
+    using System;
+    using Amqp;
+    using ServiceBus.Scenarios;
 
-// Version information for an assembly consists of the following four values:
-//
-//      Major Version
-//      Minor Version 
-//      Build Number
-//      Revision
-//
-[assembly: AssemblyVersion("1.1.9")]
-[assembly: AssemblyFileVersion("1.1.9")]
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Trace.TraceLevel = TraceLevel.Information;
+            Trace.TraceListener = (f, a) => Console.WriteLine(DateTime.Now.ToString("[hh:ss.fff]") + " " + string.Format(f, a));
+
+            try
+            {
+                new TopicExample().Run();
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine(TraceLevel.Error, e.ToString());
+            }
+        }
+    }
+}

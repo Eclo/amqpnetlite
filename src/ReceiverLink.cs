@@ -57,9 +57,9 @@ namespace Amqp
         /// </summary>
         /// <param name="session">The session within which to create the link.</param>
         /// <param name="name">The link name.</param>
-        /// <param name="adderss">The node address.</param>
-        public ReceiverLink(Session session, string name, string adderss)
-            : this(session, name, new Source() { Address = adderss }, null)
+        /// <param name="address">The node address.</param>
+        public ReceiverLink(Session session, string name, string address)
+            : this(session, name, new Source() { Address = address }, null)
         {
         }
 
@@ -295,7 +295,6 @@ namespace Amqp
 
         internal Message ReceiveInternal(MessageCallback callback, int timeout = 60000)
         {
-            this.ThrowIfDetaching("Receive");
             if (this.totalCredit < 0)
             {
                 this.SetCredit(DefaultCredit, true);
@@ -304,6 +303,7 @@ namespace Amqp
             Waiter waiter = null;
             lock (this.ThisLock)
             {
+                this.ThrowIfDetaching("Receive");
                 MessageNode first = (MessageNode)this.receivedMessages.First;
                 if (first != null)
                 {

@@ -15,14 +15,33 @@
 //  limitations under the License.
 //  ------------------------------------------------------------------------------------
 
-using System.Reflection;
+namespace Amqp.Listener
+{
+    using Amqp.Framing;
 
-// Version information for an assembly consists of the following four values:
-//
-//      Major Version
-//      Minor Version 
-//      Build Number
-//      Revision
-//
-[assembly: AssemblyVersion("1.1.9")]
-[assembly: AssemblyFileVersion("1.1.9")]
+    /// <summary>
+    /// Provides the context of a receive request. It is created by a message source
+    /// to track the delivery of an outgoing message.
+    /// </summary>
+    public class ReceiveContext : Context
+    {
+        /// <summary>
+        /// Initializes a ReceiveContext object.
+        /// </summary>
+        /// <param name="link">The listener link to send out the message.</param>
+        /// <param name="message">The message to send out.</param>
+        public ReceiveContext(ListenerLink link, Message message)
+            : base(link, message)
+        {
+        }
+
+        /// <summary>
+        /// Gets or sets an object that is associated with the receive context.
+        /// </summary>
+        public object UserToken
+        {
+            get;
+            set;
+        }
+    }
+}

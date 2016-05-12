@@ -120,6 +120,8 @@ namespace Amqp
 
         internal void Abort(Error error)
         {
+            this.Error = error;
+
             for (int i = 0; i < this.localLinks.Length; i++)
             {
                 if (this.localLinks[i] != null)
@@ -180,12 +182,21 @@ namespace Amqp
             }
         }
 
+        internal void RemoveLink(Link link, uint remoteHandle)
+        {
+            lock (this.ThisLock)
+            {
+                this.localLinks[link.Handle] = null;
+                this.remoteLinks[remoteHandle] = null;
+            }
+        }
+
         internal void SendDelivery(Delivery delivery)
         {
             lock (this.ThisLock)
             {
+                this.ThrowIfEnded("Send");
                 this.outgoingList.Add(delivery);
-
                 this.WriteDelivery(delivery);
             }
         }
@@ -283,6 +294,8 @@ namespace Amqp
 
         internal bool OnEnd(End end)
         {
+            this.Error = end.Error;
+
             lock (this.ThisLock)
             {
                 if (this.state == State.EndSent)
@@ -441,6 +454,32 @@ namespace Amqp
             };
         }
 
+        internal Delivery RemoveDeliveries(Link link)
+        {
+            LinkedList list = null;
+            lock (this.ThisLock)
+            {
+                Delivery temp = (Delivery)this.outgoingList.First;
+                while (temp != null)
+                {
+                    Delivery curr = temp;
+                    temp = (Delivery)temp.Next;
+                    if (curr.Link == link)
+                    {
+                        this.outgoingList.Remove(curr);
+                        if (list == null)
+                        {
+                            list = new LinkedList();
+                        }
+
+                        list.Add(curr);
+                    }
+                }
+            }
+
+            return list == null ? null : (Delivery)list.First;
+        }
+
         void CancelPendingDeliveries(Error error)
         {
             Delivery toRealse;
@@ -455,14 +494,7 @@ namespace Amqp
         void OnDetach(Detach detach)
         {
             Link link = this.GetLink(detach.Handle);
-            if (link.OnDetach(detach))
-            {
-                lock (this.ThisLock)
-                {
-                    this.localLinks[link.Handle] = null;
-                    this.remoteLinks[detach.Handle] = null;
-                }
-            }
+            link.OnDetach(detach);
         }
 
         void OnFlow(Flow flow)
@@ -560,11 +592,12 @@ namespace Amqp
                     if (delivery.DeliveryId >= first)
                     {
                         delivery.Settled = dispose.Settled;
-                        delivery.OnStateChange(dispose.State);
                         if (delivery.Settled)
                         {
                             linkedList.Remove(delivery);
                         }
+
+                        delivery.OnStateChange(dispose.State);
                     }
 
                     delivery = next;
