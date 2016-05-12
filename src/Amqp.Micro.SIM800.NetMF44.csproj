@@ -34,8 +34,8 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
-    <Reference Include="Eclo.NetMF.SIM800H, Version=1.1.66.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\nugetpackages\Eclo.NETMF.SIM800H.1.1.66\lib\netmf44\Eclo.NetMF.SIM800H.dll</HintPath>
+    <Reference Include="Eclo.NETMF.SIM800H, Version=1.1.71.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\nugetpackages\Eclo.NETMF.SIM800H.1.1.71\lib\netmf44\Eclo.NETMF.SIM800H.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.SPOT.Hardware" />
@@ -68,6 +68,7 @@
     <Compile Include="Types\FormatCode.cs" />
     <Compile Include="Types\RestrictedDescribed.cs" />
     <Compile Include="Types\Symbol.cs" />
+    <Compile Include="Properties\Version.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
