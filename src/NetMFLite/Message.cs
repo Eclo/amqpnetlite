@@ -18,7 +18,6 @@
 namespace Amqp
 {
     using Amqp.Types;
-    using Amqp.Framing;
 
     public class Message
     {
