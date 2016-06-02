@@ -1,0 +1,35 @@
+{
+    "version": "1.0.0-*",
+
+    "buildOptions": {
+        "compile": [
+            "Program.cs",
+            "Attribute.cs",
+            "../../src/Net/TypeExtensions.cs",
+            "../../test/Common/TestRunner.cs",
+            "../../test/Common/Assert.cs",
+            "../../test/Common/LinkTests.cs",
+            "../../test/Common/UtilityTests.cs",
+            "../../test/Common/ContainerHostTests.cs",
+            "../../test/Common/Types/*.cs",
+            "../../test/Common/AmqpSerializerTests.cs"
+        ],
+        "emitEntryPoint": true,
+        "define": [ "DOTNET" ]
+    },
+
+    "dependencies": {
+        "Microsoft.NETCore.App": {
+            "type": "platform",
+            "version": "1.0.0-rc2-3002702"
+        },
+        "Amqp": "1.1.9-*",
+        "Amqp.Listener": "1.1.9-*"
+    },
+
+    "frameworks": {
+        "netcoreapp1.0": {
+            "imports": "dnxcore50"
+        }
+    }
+}

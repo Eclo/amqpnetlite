@@ -17,7 +17,8 @@
 
 namespace Test.Amqp
 {
-    using global::Amqp.Serialization;
+    using System;
+using global::Amqp.Serialization;
 
     [AmqpContract(Encoding = EncodingType.SimpleMap)]
     abstract class Operation
@@ -48,6 +49,51 @@ namespace Test.Amqp
 
     [AmqpContract(Encoding = EncodingType.SimpleMap)]
     class MultiOperation : Operation
+    {
+        [AmqpMember]
+        public string Instruction { get; set; }
+
+        [AmqpMember]
+        public AddOperation Add { get; set; }
+
+        [AmqpMember]
+        public SquareRootOperation SquareRoot { get; set; }
+    }
+
+    // SimpleList encoded variants of the above
+    [AmqpContract(Encoding = EncodingType.SimpleList)]
+    abstract class ListOperation
+    {
+        [AmqpMember]
+        public string Name;
+
+        [AmqpMember]
+        public int Version { get; set; }
+    }
+
+    [AmqpContract(Encoding = EncodingType.SimpleList)]
+    class ListAddOperation : ListOperation
+    {
+        [AmqpMember]
+        public int Param1;
+
+        // add a dummy property to check if position is still correct
+        [AmqpMember]
+        public Guid? Dummy { get; set; }
+
+        [AmqpMember]
+        public int Param2;
+    }
+
+    [AmqpContract(Encoding = EncodingType.SimpleList)]
+    class ListSquareRootOperation : ListOperation
+    {
+        [AmqpMember]
+        public long Param;
+    }
+
+    [AmqpContract(Encoding = EncodingType.SimpleList)]
+    class ListMultiOperation : ListOperation
     {
         [AmqpMember]
         public string Instruction { get; set; }

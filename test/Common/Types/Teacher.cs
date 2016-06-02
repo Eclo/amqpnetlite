@@ -15,42 +15,43 @@
 //  limitations under the License.
 //  ------------------------------------------------------------------------------------
 
-namespace System.Collections.Concurrent
+namespace Test.Amqp
 {
     using System.Collections.Generic;
+    using global::Amqp.Serialization;
 
-    class ConcurrentDictionary<TKey, TValue> : Dictionary<TKey, TValue>
+    [AmqpContract(Name = "test.amqp:teacher", Code = 0x0000123400000002)]
+    class Teacher : Person
     {
-        readonly object syncRoot;
+        public Teacher() { }
 
-        public ConcurrentDictionary()
+        public Teacher(string name)
+            : base(name)
         {
-            this.syncRoot = new object();
+            this.Id = EmployeeId.New();
         }
 
-        public new bool TryGetValue(TKey key, out TValue value)
+        [AmqpMember(Name = "sallary", Order = 4)]
+        public int Sallary;
+
+        [AmqpMember(Order = 10)]
+        public EmployeeId Id
         {
-            lock (this.syncRoot)
-            {
-                return this.TryGetValue(key, out value);
-            }
+            get;
+            private set;
         }
 
-        public TValue GetOrAdd(TKey key, TValue value)
+        [AmqpMember(Order = 11)]
+        public Dictionary<int, string> Classes
         {
-            lock (this.syncRoot)
-            {
-                TValue temp;
-                if (this.TryGetValue(key, out temp))
-                {
-                    return temp;
-                }
-                else
-                {
-                    this.Add(key, value);
-                    return value;
-                }
-            }
+            get;
+            set;
+        }
+
+        [System.Runtime.Serialization.OnDeserialized]
+        void OnDesrialized()
+        {
+            this.Sallary *= 2;
         }
     }
 }

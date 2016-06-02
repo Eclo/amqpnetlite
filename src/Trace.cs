@@ -48,7 +48,12 @@ namespace Amqp
         /// <summary>
         /// Specifies that AMQP frames should be traced.
         /// </summary>
-        Frame = 0x10
+        Frame = 0x10,
+
+        /// <summary>
+        /// Specifies that application output should be traced.
+        /// </summary>
+        Output = 0x80
     }
 
     /// <summary>
@@ -95,7 +100,7 @@ namespace Amqp
         [Conditional("TRACE")]
         public static void WriteLine(TraceLevel level, string format)
         {
-            if (TraceListener != null && (level & TraceLevel) > 0)
+            if (TraceListener != null && (level & TraceLevel) == level)
             {
                 TraceListener(format);
             }
@@ -110,7 +115,7 @@ namespace Amqp
         [Conditional("TRACE")]
         public static void WriteLine(TraceLevel level, string format, object arg1)
         {
-            if (TraceListener != null && (level & TraceLevel) > 0)
+            if (TraceListener != null && (level & TraceLevel) == level)
             {
                 TraceListener(format, arg1);
             }
@@ -126,7 +131,7 @@ namespace Amqp
         [Conditional("TRACE")]
         public static void WriteLine(TraceLevel level, string format, object arg1, object arg2)
         {
-            if (TraceListener != null && (level & TraceLevel) > 0)
+            if (TraceListener != null && (level & TraceLevel) == level)
             {
                 TraceListener(format, arg1, arg2);
             }
@@ -143,7 +148,7 @@ namespace Amqp
         [Conditional("TRACE")]
         public static void WriteLine(TraceLevel level, string format, object arg1, object arg2, object arg3)
         {
-            if (TraceListener != null && (level & TraceLevel) > 0)
+            if (TraceListener != null && (level & TraceLevel) == level)
             {
                 TraceListener(format, arg1, arg2, arg3);
             }

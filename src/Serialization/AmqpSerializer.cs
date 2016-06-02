@@ -19,7 +19,9 @@ namespace Amqp.Serialization
 {
     using System;
     using System.Collections;
+#if !NETFX35
     using System.Collections.Concurrent;
+#endif
     using System.Collections.Generic;
     using System.IO;
     using System.Reflection;
@@ -277,6 +279,13 @@ namespace Amqp.Serialization
                     Fx.Format("{0}: SimpleMap encoding does not include descriptors so it does not support AmqpProvidesAttribute.", type.Name));
             }
 
+            if (contractAttribute.Encoding == EncodingType.SimpleList &&
+                type.GetCustomAttribute<AmqpProvidesAttribute>(false) != null)
+            {
+                throw new SerializationException(
+                    Fx.Format("{0}: SimpleList encoding does not include descriptors so it does not support AmqpProvidesAttribute.", type.Name));
+            }
+
             Dictionary<Type, SerializableType> knownTypes = null;
             var providesAttributes = type.GetCustomAttributes<AmqpProvidesAttribute>(false);
             foreach (object o in providesAttributes)
@@ -307,6 +316,10 @@ namespace Amqp.Serialization
             else if (contractAttribute.Encoding == EncodingType.SimpleMap)
             {
                 return SerializableType.CreateDescribedSimpleMapType(this, type, baseType, members, serializationCallbacks);
+            }
+            else if (contractAttribute.Encoding == EncodingType.SimpleList)
+            {
+                return SerializableType.CreateDescribedSimpleListType(this, type, baseType, members, serializationCallbacks);
             }
             else
             {
@@ -432,5 +445,44 @@ namespace Amqp.Serialization
                 return m1.Order == m2.Order ? 0 : (m1.Order > m2.Order ? 1 : -1);
             }
         }
+
+#if NETFX35
+        // this is for use within the serializer class only
+        // ensure only the synchronized methods are called
+        class ConcurrentDictionary<TKey, TValue> : Dictionary<TKey, TValue>
+        {
+            readonly object syncRoot;
+
+            public ConcurrentDictionary()
+            {
+                this.syncRoot = new object();
+            }
+
+            public new bool TryGetValue(TKey key, out TValue value)
+            {
+                lock (this.syncRoot)
+                {
+                    return base.TryGetValue(key, out value);
+                }
+            }
+
+            public TValue GetOrAdd(TKey key, TValue value)
+            {
+                lock (this.syncRoot)
+                {
+                    TValue temp;
+                    if (base.TryGetValue(key, out temp))
+                    {
+                        return temp;
+                    }
+                    else
+                    {
+                        base.Add(key, value);
+                        return value;
+                    }
+                }
+            }
+        }
+#endif
     }
 }

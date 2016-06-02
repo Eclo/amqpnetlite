@@ -18,7 +18,7 @@ SET build-target=build
 SET build-config=Debug
 SET build-platform=Any CPU
 SET build-verbosity=minimal
-SET build-dnx=false
+SET build-dotnet=true
 SET build-test=true
 SET build-nuget=false
 SET build-version=
@@ -26,7 +26,7 @@ SET build-version=
 IF /I "%1" EQU "release" (
   set build-target=build
   set build-config=Release
-  set build-dnx=true
+  set build-dotnet=true
   set build-nuget=true
   GOTO :args-done
 )
@@ -37,13 +37,14 @@ IF /I "%1" EQU "clean" (
 )
 
 IF /I "%1" EQU "test" (
-  GOTO :build-done
+  set build-target=test
+  GOTO :args-done
 )
 
 :args-start
 IF /I "%1" EQU "" GOTO args-done
 
-IF /I "%1" EQU "--dnx" SET build-dnx=true&&GOTO args-loop
+IF /I "%1" EQU "--dotnet" SET build-dotnet=true&&GOTO args-loop
 IF /I "%1" EQU "--skiptest" SET build-test=false&&GOTO args-loop
 IF /I "%1" EQU "--nuget" SET build-nuget=true&&GOTO args-loop
 IF /I "%1" EQU "--config" GOTO :args-config
@@ -76,12 +77,23 @@ IF /I "%build-verbosity%" EQU "" GOTO :args-error
 
 ECHO Build configuration: %build-config%
 ECHO Build platform: %build-platform%
+ECHO Build dotnet: %build-dotnet%
 ECHO Run tests: %build-test%
 ECHO Build NuGet package: %build-nuget%
 ECHO.
 
 IF /I "%build-target%" == "clean" GOTO :build-clean
+
+IF /I "%build-dotnet%" EQU "false" GOTO :build-target
+CALL :file-exists dotnet exe
+  IF "%dotnetPath%" == "" (
+  ECHO .Net Core SDK is not installed. If you unzipped the package, make sure the location is in PATH.
+  GOTO :exit
+)
+
+:build-target
 IF /I "%build-target%" == "build" GOTO :build-sln
+IF /I "%build-target%" == "test" GOTO :build-done
 
 :args-error
 CALL :handle-error 1
@@ -94,7 +106,7 @@ GOTO :exit
 
 :build-sln
 FOR /F "tokens=1-3* delims=() " %%A in (.\src\Properties\Version.cs) do (
-  IF "%%B" == "AssemblyVersion" SET build-version=%%C
+  IF "%%B" == "AssemblyInformationalVersion" SET build-version=%%C
 )
 IF "%build-version%" == "" (
   ECHO Cannot find version from Version.cs.
@@ -117,19 +129,14 @@ FOR /L %%I IN (2,1,3) DO (
   )
 )
 
-IF /I "%build-dnx%" EQU "false" GOTO :build-done
-CALL :file-exists dotnet exe
-IF "%dotnetPath%" == "" (
-  ECHO .Net Core SDK is not installed. If you unzipped the package, make sure the location is in PATH.
-  GOTO :exit
-)
-CALL "%dotnetPath%" restore dnx
+IF /I "%build-dotnet%" EQU "false" GOTO :build-done
+CALL "%dotnetPath%" restore dotnet
 IF %ERRORLEVEL% NEQ 0 (
   ECHO dotnet restore failed with error %ERRORLEVEL%
   SET return-code=%ERRORLEVEL%
   GOTO :exit
 )
-CALL "%dotnetPath%" build dnx\Amqp.Listener --configuration %build-config% --build-base-path bin\dnx
+CALL "%dotnetPath%" build dotnet/Amqp dotnet/Amqp.Listener dotnet/Test.Amqp --configuration %build-config%
 IF %ERRORLEVEL% NEQ 0 (
   ECHO dotnet build failed with error %ERRORLEVEL%
   SET return-code=%ERRORLEVEL%
@@ -153,13 +160,16 @@ IF %ERRORLEVEL% EQU 0 (
 )
 
 SET TestBrokerPath=.\bin\%build-config%\TestAmqpBroker\TestAmqpBroker.exe
-ECHO Starting the test AMQP broker %TestBrokerPath%
+ECHO Starting the test AMQP broker
+ECHO %TestBrokerPath% amqp://localhost:5672 amqps://localhost:5671 ws://localhost:18080 /creds:guest:guest /cert:localhost
 START CMD.exe /C %TestBrokerPath% amqp://localhost:5672 amqps://localhost:5671 ws://localhost:18080 /creds:guest:guest /cert:localhost
 rem Delay to allow broker to start up
 PING -n 1 -w 2000 1.1.1.1 >nul 2>&1
-:run-test
-"%MSTestPath%" /testcontainer:.\bin\%build-config%\Test.Amqp.Net\Test.Amqp.Net.dll
 
+:run-test
+ECHO.
+ECHO Running NET tests...
+"%MSTestPath%" /testcontainer:.\bin\%build-config%\Test.Amqp.Net\Test.Amqp.Net.dll
 IF %ERRORLEVEL% NEQ 0 (
   SET return-code=%ERRORLEVEL%
   ECHO Test failed!
@@ -168,6 +178,28 @@ IF %ERRORLEVEL% NEQ 0 (
   GOTO :exit
 )
 
+ECHO.
+ECHO Running NET35 tests...
+"%MSTestPath%" /testcontainer:.\bin\%build-config%\Test.Amqp.Net35\Test.Amqp.Net35.dll
+IF %ERRORLEVEL% NEQ 0 (
+  SET return-code=%ERRORLEVEL%
+  ECHO Test failed!
+  TASKKILL /F /IM TestAmqpBroker.exe
+  IF /I "%is-elevated%" == "false" ECHO WebSocket tests may be failing because the broker was started without Administrator permission
+  GOTO :exit
+)
+
+ECHO.
+ECHO Running DOTNET (.Net Core 1.0) tests...
+IF /I "%build-dotnet%" EQU "false" GOTO done-test
+"%dotnetPath%" run --configuration %build-config% --project dotnet\Test.Amqp
+IF %ERRORLEVEL% NEQ 0 (
+  SET return-code=%ERRORLEVEL%
+  ECHO .Net Core Test failed!
+  GOTO :exit
+)
+
+:done-test
 TASKKILL /F /IM TestAmqpBroker.exe
 
 :nuget-package
@@ -202,11 +234,11 @@ EXIT /b !return-code!
 :usage
 ECHO build.cmd [clean^|release] [options]
 ECHO   clean: clean intermediate files
-ECHO   release: a shortcut for "--config Release --nuget --dnx"
+ECHO   release: a shortcut for "--config Release --nuget --dotnet"
 ECHO options:
 ECHO  --config ^<value^>      [Debug] build configuration (e.g. Debug, Release)
 ECHO  --platform ^<value^>    [Any CPU] build platform (e.g. Win32, x64, ...)
-ECHO  --dnx                 [false] build dnx
+ECHO  --dotnet              [true] build dotnet
 ECHO  --verbosity ^<value^>   [minimal] build verbosity (q[uiet], m[inimal], n[ormal], d[etailed] and diag[nostic])
 ECHO  --skiptest            [false] skip test
 ECHO  --nuget               [false] create NuGet packet (for Release only)

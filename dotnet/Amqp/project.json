@@ -1,44 +1,48 @@
 {
     "version": "1.1.9",
 
-    "compile": [
-        "../../src/Properties/AssemblyInfo.cs",
-        "../../src/Properties/Version.cs",
-        "../../src/Properties/SNInternalsVisibleTo.cs",
-        "../../src/Framing/*.cs",
-        "../../src/Net/*.cs",
-        "../../src/Sasl/*.cs",
-        "../../src/Serialization/*.cs",
-        "../../src/Transactions/*.cs",
-        "../../src/Types/*.cs",
-        "../../src/*.cs"
-    ],
-
-    "namedResource": {
-        "Amqp.SRAmqp": "../../src/SRAmqp.resx"
-    },
-
-    "compilationOptions": {
-        "keyFile":  "../../src/amqp.snk",
+    "buildOptions": {
+        "compile": [
+            "../../src/Properties/AssemblyInfo.cs",
+            "../../src/Properties/Version.cs",
+            "../../src/Properties/SNInternalsVisibleTo.cs",
+            "../../src/Framing/*.cs",
+            "../../src/Net/*.cs",
+            "../../src/Sasl/*.cs",
+            "../../src/Serialization/*.cs",
+            "../../src/Transactions/*.cs",
+            "../../src/Types/*.cs",
+            "../../src/*.cs"
+        ],
+        "embed": [
+            "../../src/SRAmqp.resx"
+        ],
+        "allowUnsafe": true,
+        "warningsAsErrors": true,
+        "xmlDoc": true,
+        "keyFile": "../../src/amqp.snk",
         "publicSign": true
     },
 
-    "frameworks": {
-        "dnx451": {
-            "compilationOptions": {
-                "allowUnsafe": true,
-                "define": [ "TRACE", "NETFX" ]
-            },
-            "frameworkAssemblies": {
-                "System": "",
-                "System.Transactions": ""
+    "configurations": {
+        "Debug": {
+            "buildOptions": {
+                "defines": [ "DEBUG" ]
             }
         },
-        "dnxcore50": {
-            "compilationOptions": {
-                "allowUnsafe": true,
+        "Release": {
+            "buildOptions": {
+                "optimize": true
+            }
+        }
+    },
+
+    "frameworks": {
+        "netstandard1.3": {
+            "buildOptions": {
                 "define": [ "TRACE", "DOTNET" ]
             },
+            "imports": [ "dnxcore50" ],
             "dependencies": {
                 "System.Collections": "4.0.10",
                 "System.Collections.Concurrent": "4.0.10",

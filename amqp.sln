@@ -10,7 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amqp.Store", "src\Amqp.Stor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Amqp.Net", "test\Test.Amqp.Net\Test.Amqp.Net.csproj", "{06CAA70A-20A7-4334-AF03-D6228039C178}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{679989B2-8717-4ECC-9CAD-B104CFA91C38}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{679989B2-8717-4ECC-9CAD-B104CFA91C38}"
 	ProjectSection(SolutionItems) = preProject
 		Amqp.Micro.nuspec = Amqp.Micro.nuspec
 		Amqp.Net.nuspec = Amqp.Net.nuspec
@@ -98,6 +98,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amqp.Micro.SIM800.NetMF43",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amqp.Net40", "src\Amqp.Net40.csproj", "{4A250B81-35E9-4D2F-8030-62909F6C8C63}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dotnet", "dotnet", "{57BFDBF2-F67F-4D14-953F-5DA8FB06B52C}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amqp.Micro.SIM800.NetMF44", "src\Amqp.Micro.SIM800.NetMF44.csproj", "{28B4B8DE-43BD-4BF0-A160-A28CE9EA630D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Packager.Amqp.SIM800H", "NuGet.Packager.Amqp.SIM800H\NuGet.Packager.Amqp.SIM800H.csproj", "{0451BAEF-DF2E-4B98-8644-94EE9415E389}"
@@ -108,12 +110,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Packager.Amqp.SIM800H
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Amqp", "Amqp", "{C40B5C1E-3ECB-409D-9ED2-D36D4879A485}"
 	ProjectSection(SolutionItems) = preProject
-		dnx\Amqp\project.json = dnx\Amqp\project.json
+		dotnet\Amqp\project.json = dotnet\Amqp\project.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Amqp.Listener", "Amqp.Listener", "{B8917277-E208-4F1F-8973-8CA8C1C52AE7}"
 	ProjectSection(SolutionItems) = preProject
-		dnx\Amqp.Listener\project.json = dnx\Amqp.Listener\project.json
+		dotnet\Amqp.Listener\project.json = dotnet\Amqp.Listener\project.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docfx", "docfx", "{EB7EBF85-48AB-4EA0-9F00-825364BFA6FD}"
@@ -136,6 +138,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "articles", "articles", "{56
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceBus.Topic", "Examples\ServiceBus\ServiceBus.Topic\ServiceBus.Topic.csproj", "{D454DB5E-820F-4A92-B31E-A41A9D20B086}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test.Amqp", "Test.Amqp", "{9B1E629B-4179-4531-BE56-9B9AE7735EBC}"
+	ProjectSection(SolutionItems) = preProject
+		dotnet\Test.Amqp\Attribute.cs = dotnet\Test.Amqp\Attribute.cs
+		dotnet\Test.Amqp\Program.cs = dotnet\Test.Amqp\Program.cs
+		dotnet\Test.Amqp\project.json = dotnet\Test.Amqp\project.json
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Amqp.Net35", "test\Test.Amqp.Net35\Test.Amqp.Net35.csproj", "{7852029D-235C-40B7-8957-8E78414C3F97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -574,6 +585,16 @@ Global
 		{D454DB5E-820F-4A92-B31E-A41A9D20B086}.Release|ARM.ActiveCfg = Release|Any CPU
 		{D454DB5E-820F-4A92-B31E-A41A9D20B086}.Release|x64.ActiveCfg = Release|Any CPU
 		{D454DB5E-820F-4A92-B31E-A41A9D20B086}.Release|x86.ActiveCfg = Release|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Release|ARM.ActiveCfg = Release|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Release|x64.ActiveCfg = Release|Any CPU
+		{7852029D-235C-40B7-8957-8E78414C3F97}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -606,5 +627,6 @@ Global
 		{8779EBAC-1CA0-45D4-97FC-C4FCD8423765} = {BF554E12-7096-465F-B1D0-9ACFF00877F2}
 		{5637969B-A822-425A-A831-F70AA2275777} = {EB7EBF85-48AB-4EA0-9F00-825364BFA6FD}
 		{D454DB5E-820F-4A92-B31E-A41A9D20B086} = {4A93A5B6-B935-4F86-B3DE-95B0F6EBEA56}
+		{9B1E629B-4179-4531-BE56-9B9AE7735EBC} = {57BFDBF2-F67F-4D14-953F-5DA8FB06B52C}
 	EndGlobalSection
 EndGlobal

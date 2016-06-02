@@ -17,47 +17,67 @@
 
 namespace Test.Amqp
 {
+    using System;
     using System.Collections.Generic;
     using global::Amqp.Serialization;
 
-    [AmqpContract(Name = "test.amqp:student", Code = 0x0000123400000001)]
-    class Student : Person
+    [AmqpContract(Name = "test.amqp:person", Code = 0x0000123400000000)]
+    [AmqpProvides(typeof(Student))]
+    [AmqpProvides(typeof(Teacher))]
+    class Person
     {
-        Student() : base(null) { }
-
-        public Student(string name)
-            : base(name)
+        public Person()
         {
         }
 
-        [AmqpMember(Name = "address", Order = 4)]
-        public StreetAddress Address;
-
-        [AmqpMember(Name = "grades", Order = 10)]
-        public List<int> Grades { get; set; }
-
-        [System.Runtime.Serialization.OnSerializing]
-        void OnSerializing()
+        public Person(string name)
         {
-            this.Version++;
+            this.Name = name;
         }
 
-        [System.Runtime.Serialization.OnSerialized]
-        void OnSerialized()
+        public int Version
         {
-            this.Version++;
+            get;
+            protected set;
         }
 
-        [System.Runtime.Serialization.OnDeserializing]
-        void OnDeserializing()
+        [AmqpMember(Order = 1)]
+        public string Name
         {
-            this.Version++;
+            get;
+            private set;
         }
+
+        [AmqpMember(Order = 2)]
+        public int Age
+        {
+            get;
+            set;
+        }
+
+        [AmqpMember(Order = 3)]
+        public DateTime? DateOfBirth;
+
+        public IDictionary<string, object> Properties
+        {
+            get
+            {
+                if (this.properties == null)
+                {
+                    this.properties = new Dictionary<string, object>();
+                }
+
+                return this.properties;
+            }
+        }
+
+        [AmqpMember(Order = 8)]
+        Dictionary<string, object> properties;
 
         [System.Runtime.Serialization.OnDeserialized]
-        void OnDeserialized()
+        void OnDesrialized()
         {
-            this.Version++;
+            this.Age = this.Age + 1;
         }
     }
 }
