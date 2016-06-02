@@ -71,7 +71,7 @@
     <Compile Include="Properties\Version.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.netmf44.config" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>:: copy output files to nuget package project

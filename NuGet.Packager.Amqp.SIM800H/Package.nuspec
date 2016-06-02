@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Eclo.NETMF.AMQPNetMicro.SIM800H</id>
-    <version>1.1.9</version>
+    <version>1.1.9.1</version>
     <title>Compact AMQP.Net Lite for SIM800H in NETMF</title>
     <authors>Eclo Solutions</authors>
     <owners>Eclo Solutions</owners>
@@ -27,7 +27,7 @@
     <references></references>
     <tags>NETMF, Micro Framework, SIM800, AMQP</tags>
     <dependencies>
-      <dependency id="Eclo.NETMF.SIM800H" version="1.1.71" />
+      <dependency id="Eclo.NETMF.SIM800H" version="1.1.85" />
     </dependencies>
   </metadata>
   <files>
