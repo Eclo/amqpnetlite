@@ -57,6 +57,8 @@ UpgradeLog*.htm
 OnBoardFlash.dat
 OnBoardFlash.dat.smd
 DOTNETMF_FS_EMULATION*/
+*.pe
+*.pdbx
 
 # dnx
 project.lock.json
