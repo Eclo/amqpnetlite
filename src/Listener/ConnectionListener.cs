@@ -129,7 +129,12 @@ namespace Amqp.Listener
                 throw new ObjectDisposedException(this.GetType().Name);
             }
 
-            if (this.address.Scheme.Equals(Address.Amqp, StringComparison.OrdinalIgnoreCase))
+            TransportProvider provider;
+            if (this.container.CustomTransports.TryGetValue(this.address.Scheme, out provider))
+            {
+                this.listener = new CustomTransportListener(this, provider);
+            }
+            else if (this.address.Scheme.Equals(Address.Amqp, StringComparison.OrdinalIgnoreCase))
             {
                 this.listener = new TcpTransportListener(this, this.address.Host, this.address.Port);
             }
@@ -573,7 +578,7 @@ namespace Amqp.Listener
             async Task AcceptAsync(Socket socket)
             {
                 SocketAsyncEventArgs args = new SocketAsyncEventArgs();
-                args.Completed += (s, a) => ((TaskCompletionSource<Socket>)a.UserToken).Complete(a, b => b.AcceptSocket);
+                args.Completed += (s, a) => SocketExtensions.Complete(s, a, false, a.SocketError == SocketError.Success ? a.AcceptSocket : null);
 
                 while (!this.closed)
                 {
@@ -581,7 +586,10 @@ namespace Amqp.Listener
                     {
                         args.AcceptSocket = null;
                         Socket acceptSocket = await socket.AcceptAsync(args, SocketFlags.None);
-                        var task = this.HandleSocketAsync(acceptSocket);
+                        if (acceptSocket != null)
+                        {
+                            var task = this.HandleSocketAsync(acceptSocket);
+                        }
                     }
                     catch (ObjectDisposedException)
                     {
@@ -629,20 +637,59 @@ namespace Amqp.Listener
             }
         }
 
+        class CustomTransportListener : TransportListener
+        {
+            readonly TransportProvider provider;
+
+            public CustomTransportListener(ConnectionListener listener, TransportProvider provider)
+            {
+                this.Listener = listener;
+                this.provider = provider;
+            }
+
+            public override void Open()
+            {
+                var t = this.AcceptAsync();
+            }
+
+            public override void Close()
+            {
+                this.provider.Dispose();
+            }
+
+            async Task AcceptAsync()
+            {
+                while (!this.closed)
+                {
+                    try
+                    {
+                        var transport = await this.provider.CreateAsync(this.Listener.address);
+                        await this.Listener.HandleTransportAsync(transport);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // listener is closed
+                    }
+                    catch (Exception exception)
+                    {
+                        Trace.WriteLine(TraceLevel.Warning, exception.ToString());
+                    }
+                }
+            }
+        }
+
         class ListenerTcpTransport : TcpTransport, IAuthenticated
         {
             public ListenerTcpTransport(Socket socket, IBufferManager bufferManager)
                 : base(bufferManager)
             {
                 this.socketTransport = new TcpSocket(this, socket);
-                this.writer = new Writer(this, this.socketTransport);
             }
 
             public ListenerTcpTransport(SslStream sslStream, IBufferManager bufferManager)
                 : base(bufferManager)
             {
                 this.socketTransport = new SslSocket(this, sslStream);
-                this.writer = new Writer(this, this.socketTransport);
                 if (sslStream.RemoteCertificate != null)
                 {
                     this.Principal = new GenericPrincipal(

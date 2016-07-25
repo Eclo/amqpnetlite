@@ -18,6 +18,7 @@
 namespace Amqp
 {
     using System;
+    using System.Collections.Generic;
     using System.Net.Security;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
@@ -30,15 +31,40 @@ namespace Amqp
     /// </summary>
     public class ConnectionFactory : ConnectionFactoryBase
     {
+        Dictionary<string, TransportProvider> transportFactories;
         SslSettings sslSettings;
         SaslSettings saslSettings;
 
         /// <summary>
-        /// Constructor to create a connection factory.
+        /// Constructor to create a connection factory with default transport
+        /// implementations.
         /// </summary>
         public ConnectionFactory()
             : base()
         {
+        }
+
+        /// <summary>
+        /// Creates a connection factory with a custom transport factory.
+        /// </summary>
+        /// <param name="providers">The custom transport providers.</param>
+        /// <remarks>The library provides built-in transport implementation for address schemes
+        /// "amqp", "amqps" (and "ws", "wss" on .Net framework). Application can replace or
+        /// extend it with custom implementations. When the built-in provider is replaced,
+        /// the TCP and SSL settings of the connection factory will not be applied to the
+        /// custom implementation.
+        /// </remarks>
+        public ConnectionFactory(IEnumerable<TransportProvider> providers)
+            : this()
+        {
+            this.transportFactories = new Dictionary<string, TransportProvider>(StringComparer.OrdinalIgnoreCase);
+            foreach (var provider in providers)
+            {
+                foreach (var scheme in provider.AddressSchemes)
+                {
+                    this.transportFactories[scheme] = provider;
+                }
+            }
         }
 
         /// <summary>
@@ -69,10 +95,10 @@ namespace Amqp
         }
 
         /// <summary>
-        /// Creates a new connection.
+        /// Creates a new connection asynchronously.
         /// </summary>
         /// <param name="address">The address of remote endpoint to connect to.</param>
-        /// <returns></returns>
+        /// <returns>A task for the connection creation operation. On success, the result is an AMQP <see cref="Connection"/></returns>
         public Task<Connection> CreateAsync(Address address)
         {
             return this.CreateAsync(address, null, null);
@@ -84,12 +110,16 @@ namespace Amqp
         /// <param name="address">The address of remote endpoint to connect to.</param>
         /// <param name="open">If specified, it is sent to open the connection, otherwise an open frame created from the AMQP settings property is sent.</param>
         /// <param name="onOpened">If specified, it is invoked when an open frame is received from the remote peer.</param>
-        /// <returns></returns>
+        /// <returns>A task for the connection creation operation. On success, the result is an AMQP <see cref="Connection"/></returns>
         public async Task<Connection> CreateAsync(Address address, Open open, OnOpened onOpened)
         {
             IAsyncTransport transport;
-            if (string.Equals(address.Scheme, Address.Amqp, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(address.Scheme, Address.Amqps, StringComparison.OrdinalIgnoreCase))
+            TransportProvider provider;
+            if (this.transportFactories != null && this.transportFactories.TryGetValue(address.Scheme, out provider))
+            {
+                transport = await provider.CreateAsync(address);
+            }
+            else if (TcpTransport.MatchScheme(address.Scheme))
             {
                 TcpTransport tcpTransport = new TcpTransport(this.BufferManager);
                 await tcpTransport.ConnectAsync(address, this);
@@ -99,7 +129,7 @@ namespace Amqp
             else if (WebSocketTransport.MatchScheme(address.Scheme))
             {
                 WebSocketTransport wsTransport = new WebSocketTransport();
-                await wsTransport.ConnectAsync(address);
+                await wsTransport.ConnectAsync(address, null);
                 transport = wsTransport;
             }
 #endif

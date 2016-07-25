@@ -115,7 +115,7 @@ IF "%build-version%" == "" (
 )
 
 echo Build version %build-version%
-"%MSBuildPath%" amqp.sln /t:Rebuild /p:Configuration=%build-config%;Platform="%build-platform%" /verbosity:%build-verbosity%
+"%MSBuildPath%" amqp-vs2013.sln /t:Rebuild /p:Configuration=%build-config%;Platform="%build-platform%" /verbosity:%build-verbosity%
 IF %ERRORLEVEL% NEQ 0 (
   SET return-code=%ERRORLEVEL%
   GOTO :exit
@@ -136,7 +136,7 @@ IF %ERRORLEVEL% NEQ 0 (
   SET return-code=%ERRORLEVEL%
   GOTO :exit
 )
-CALL "%dotnetPath%" build dotnet/Amqp dotnet/Amqp.Listener dotnet/Test.Amqp --configuration %build-config%
+CALL "%dotnetPath%" build dotnet/Amqp dotnet/Amqp.WebSockets.Client dotnet\HelloAmqp dotnet/Test.Amqp --configuration %build-config%
 IF %ERRORLEVEL% NEQ 0 (
   ECHO dotnet build failed with error %ERRORLEVEL%
   SET return-code=%ERRORLEVEL%
@@ -192,7 +192,7 @@ IF %ERRORLEVEL% NEQ 0 (
 ECHO.
 ECHO Running DOTNET (.Net Core 1.0) tests...
 IF /I "%build-dotnet%" EQU "false" GOTO done-test
-"%dotnetPath%" run --configuration %build-config% --project dotnet\Test.Amqp
+"%dotnetPath%" run --configuration %build-config% --project dotnet\Test.Amqp -- no-broker
 IF %ERRORLEVEL% NEQ 0 (
   SET return-code=%ERRORLEVEL%
   ECHO .Net Core Test failed!
@@ -221,8 +221,9 @@ IF "%NuGetPath%" == "" (
 ) ELSE (
   IF NOT EXIST ".\Build\Packages" MKDIR ".\Build\Packages"
   ECHO Building NuGet package with version %build-version%
-  "%NuGetPath%" pack Amqp.Net.nuspec -Version %build-version% -OutputDirectory ".\Build\Packages"
-  "%NuGetPath%" pack Amqp.Micro.nuspec -Version %build-version% -OutputDirectory ".\Build\Packages"
+  "%NuGetPath%" pack .\nuspec\Amqp.Net.nuspec -Version %build-version% -BasePath .\ -OutputDirectory ".\Build\Packages"
+  "%NuGetPath%" pack .\nuspec\Amqp.Micro.nuspec -Version %build-version% -BasePath .\ -OutputDirectory ".\Build\Packages"
+  "%NuGetPath%" pack .\nuspec\Amqp.WebSockets.nuspec -Version %build-version% -BasePath .\ -OutputDirectory ".\Build\Packages"
 )
 
 GOTO :exit

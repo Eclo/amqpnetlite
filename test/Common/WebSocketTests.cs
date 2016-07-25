@@ -16,6 +16,7 @@
 //  ------------------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Amqp;
 using Amqp.Framing;
@@ -28,22 +29,28 @@ namespace Test.Amqp
     {
         const string address = "ws://guest:guest@localhost:18080/test";
 
+#if NETFX
         [TestMethod]
         public void WebSocketContainerHostTests()
         {
             int total = 0;
             int passed = 0;
+            string[] excluded = new string[]
+            {
+                "ContainerHostCustomTransportTest"
+            };
 
             foreach (var mi in typeof(ContainerHostTests).GetMethods())
             {
                 if (mi.GetCustomAttributes(typeof(TestMethodAttribute), false).Length > 0 &&
-                    mi.GetCustomAttributes(typeof(IgnoreAttribute), false).Length == 0)
+                    mi.GetCustomAttributes(typeof(IgnoreAttribute), false).Length == 0 &&
+                    !excluded.Contains(mi.Name))
                 {
                     total++;
 
                     ContainerHostTests test = new ContainerHostTests();
                     test.Uri = new System.Uri(address);
-                    test.TestInitialize();
+                    test.ClassInitialize();
 
                     try
                     {
@@ -56,23 +63,32 @@ namespace Test.Amqp
                         System.Diagnostics.Trace.WriteLine(mi.Name + " failed: " + exception.ToString());
                     }
 
-                    test.TestCleanup();
+                    test.ClassCleanup();
                 }
             }
 
             Assert.AreEqual(total, passed, string.Format("Not all tests passed {0}/{1}", passed, total));
         }
+#endif
 
         [TestMethod]
         public async Task WebSocketSendReceiveAsync()
         {
+            if (Environment.GetEnvironmentVariable("CoreBroker") == "1")
+            {
+                // No Websocket listener on .Net Core
+                return;
+            }
+
             string testName = "WebSocketSendReceiveAsync";
 
             // assuming it matches the broker's setup and port is not taken
             Address wsAddress = new Address(address);
             int nMsgs = 50;
 
-            Connection connection = await Connection.Factory.CreateAsync(wsAddress);
+            ConnectionFactory connectionFactory = new ConnectionFactory(
+                new TransportProvider[] { new WebSocketTransportFactory() });
+            Connection connection = await connectionFactory.CreateAsync(wsAddress);
             Session session = new Session(connection);
             SenderLink sender = new SenderLink(session, "sender-" + testName, "q1");
 

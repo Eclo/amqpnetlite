@@ -40,14 +40,15 @@ namespace Test.Amqp
 #endif
     public class LinkTests
     {
-        public static Address address = new Address("amqp://guest:guest@localhost:5672");
+        public const string AddressString = "amqp://guest:guest@localhost:5672";
+        public static Address address = new Address(AddressString);
 
         static LinkTests()
         {
             Connection.DisableServerCertValidation = true;
             // uncomment the following to write frame traces
             //Trace.TraceLevel = TraceLevel.Frame;
-            //Trace.TraceListener = (f, a) => System.Diagnostics.Trace.WriteLine(DateTime.Now.ToString("[hh:ss.fff]") + " " + string.Format(f, a));
+            //Trace.TraceListener = (f, a) => System.Diagnostics.Trace.WriteLine(DateTime.Now.ToString("[hh:mm:ss.fff]") + " " + string.Format(f, a));
         }
 
 #if NETFX || NETFX35 || NETFX_CORE || DOTNET
@@ -788,6 +789,14 @@ namespace Test.Amqp
             sender = new SenderLink(session, "sender", "q1");
             sender.Send(new Message("test2") { Properties = new Properties() { MessageId = testName } });
             sender.Close();
+
+            ReceiverLink receiver = new ReceiverLink(session, "receiver", "q1");
+            for (int i = 1; i <= 2; i++)
+            {
+                var m = receiver.Receive();
+                Assert.IsTrue(m != null, "Didn't receive message " + i);
+                receiver.Accept(m);
+            }
 
             session.Close(0);
             connection.Close();

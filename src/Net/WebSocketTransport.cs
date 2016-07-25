@@ -17,7 +17,6 @@
 
 namespace Amqp
 {
-#if NETFX
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -25,36 +24,36 @@ namespace Amqp
     using System.Threading;
     using System.Threading.Tasks;
 
-    class WebSocketTransport : IAsyncTransport
+    /// <summary>
+    /// The WebSocketTransport class allows applications to send and receive AMQP traffic
+    /// using the AMQP-WebSockets binding protocol.
+    /// </summary>
+    public class WebSocketTransport : IAsyncTransport
     {
-        public const string WebSocketSubProtocol = "AMQPWSB10";
-        public const string WebSockets = "WS";
-        public const string SecureWebSockets = "WSS";
-        const int WebSocketsPort = 80;
-        const int SecureWebSocketsPort = 443;
+        internal const string WebSocketSubProtocol = "AMQPWSB10";
+        internal const string WebSockets = "WS";
+        internal const string SecureWebSockets = "WSS";
+        internal const int WebSocketsPort = 80;
+        internal const int SecureWebSocketsPort = 443;
         WebSocket webSocket;
-        Queue<ByteBuffer> bufferQueue;
-        bool writing;
         Connection connection;
 
-        public WebSocketTransport()
+        internal WebSocketTransport()
         {
-            this.bufferQueue = new Queue<ByteBuffer>();
         }
 
-        public WebSocketTransport(WebSocket webSocket)
-            : this()
+        internal WebSocketTransport(WebSocket webSocket)
         {
             this.webSocket = webSocket;
         }
 
-        public static bool MatchScheme(string scheme)
+        internal static bool MatchScheme(string scheme)
         {
             return string.Equals(scheme, WebSockets, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(scheme, SecureWebSockets, StringComparison.OrdinalIgnoreCase);
         }
 
-        public async Task ConnectAsync(Address address)
+        internal async Task<IAsyncTransport> ConnectAsync(Address address, Action<ClientWebSocketOptions> options)
         {
             Uri uri = new UriBuilder()
             {
@@ -66,6 +65,11 @@ namespace Amqp
 
             ClientWebSocket cws = new ClientWebSocket();
             cws.Options.AddSubProtocol(WebSocketSubProtocol);
+            if (options != null)
+            {
+                options(cws.Options);
+            }
+
             await cws.ConnectAsync(uri, CancellationToken.None);
             if (cws.SubProtocol != WebSocketSubProtocol)
             {
@@ -73,12 +77,14 @@ namespace Amqp
 
                 throw new NotSupportedException(
                     string.Format(
-                    CultureInfo.InvariantCulture,
-                    "WebSocket SubProtocol used by the host is not the same that was requested: {0}",
-                    cws.SubProtocol ?? "<null>"));
+                        CultureInfo.InvariantCulture,
+                        "WebSocket SubProtocol used by the host is not the same that was requested: {0}",
+                        cws.SubProtocol ?? "<null>"));
             }
 
             this.webSocket = cws;
+
+            return this;
         }
 
         void IAsyncTransport.SetConnection(Connection connection)
@@ -88,11 +94,6 @@ namespace Amqp
 
         async Task<int> IAsyncTransport.ReceiveAsync(byte[] buffer, int offset, int count)
         {
-            if (this.webSocket.State != WebSocketState.Open)
-            {
-                return 0;
-            }
-
             var result = await this.webSocket.ReceiveAsync(new ArraySegment<byte>(buffer, offset, count), CancellationToken.None);
             if (result.MessageType == WebSocketMessageType.Close)
             {
@@ -102,35 +103,30 @@ namespace Amqp
             return result.Count;
         }
 
-        bool IAsyncTransport.SendAsync(ByteBuffer buffer, IList<ArraySegment<byte>> bufferList, int listSize)
+        async Task IAsyncTransport.SendAsync(IList<ByteBuffer> bufferList, int listSize)
         {
-            throw new InvalidOperationException();
+            foreach (var buffer in bufferList)
+            {
+                await this.webSocket.SendAsync(new ArraySegment<byte>(buffer.Buffer, buffer.Offset, buffer.Length),
+                    WebSocketMessageType.Binary, true, CancellationToken.None);
+            }
         }
 
         void ITransport.Close()
         {
-            this.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None).Wait();
+            this.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None)
+                .ContinueWith((t, o) => { if (t.IsFaulted) ((WebSocket)o).Dispose(); }, this.webSocket);
         }
 
         void ITransport.Send(ByteBuffer buffer)
         {
-            lock (this.bufferQueue)
-            {
-                if (this.writing)
-                {
-                    this.bufferQueue.Enqueue(buffer);
-                    return;
-                }
-
-                this.writing = true;
-            }
-
-            Task task = this.WriteAsync(buffer);
+            this.webSocket.SendAsync(new ArraySegment<byte>(buffer.Buffer, buffer.Offset, buffer.Length),
+                WebSocketMessageType.Binary, true, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         int ITransport.Receive(byte[] buffer, int offset, int count)
         {
-            throw new InvalidOperationException();
+            return ((IAsyncTransport)this).ReceiveAsync(buffer, offset, count).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         static int GetDefaultPort(string scheme, int port)
@@ -150,37 +146,5 @@ namespace Amqp
             
             return port;
         }
-
-        async Task WriteAsync(ByteBuffer buffer)
-        {
-            do
-            {
-                try
-                {
-                    await this.webSocket.SendAsync(new ArraySegment<byte>(buffer.Buffer, buffer.Offset, buffer.Length),
-                        WebSocketMessageType.Binary, true, CancellationToken.None);
-                }
-                catch (Exception exception)
-                {
-                    this.connection.OnIoException(exception);
-                    break;
-                }
-
-                lock (this.bufferQueue)
-                {
-                    if (this.bufferQueue.Count > 0)
-                    {
-                        buffer = this.bufferQueue.Dequeue();
-                    }
-                    else
-                    {
-                        this.writing = false;
-                        buffer = null;
-                    }
-                }
-            }
-            while (buffer != null);
-        }
     }
-#endif
 }

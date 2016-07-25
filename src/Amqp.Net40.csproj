@@ -32,6 +32,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>amqp.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="SRAmqp.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -70,6 +74,8 @@
     <Compile Include="Net\ResourceManager.cs" />
     <Compile Include="Net\BufferManager.cs" />
     <Compile Include="Net\SocketExtensions.cs" />
+    <Compile Include="Net\TransportProvider.cs" />
+    <Compile Include="Net\TransportWriter.cs" />
     <Compile Include="Net\TypeExtensions.cs" />
     <Compile Include="Net\WrappedByteBuffer.cs" />
     <Compile Include="Net\RefCountedByteBuffer.cs" />
@@ -135,7 +141,6 @@
       <DependentUpon>SRAmqp.resx</DependentUpon>
     </Compile>
     <Compile Include="Net\TcpTransport.cs" />
-    <Compile Include="Net\WebSocketTransport.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReceiverLink.cs" />
     <Compile Include="Sasl\SaslChallenge.cs" />

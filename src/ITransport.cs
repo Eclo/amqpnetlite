@@ -36,7 +36,8 @@ namespace Amqp
         /// <param name="buffer">The buffer to store the received bytes.</param>
         /// <param name="offset">The start position.</param>
         /// <param name="count">The number of bytes to receive.</param>
-        /// <returns></returns>
+        /// <returns>The number of bytes received. It may be less than <paramref name="count"/>.
+        /// A value of 0 means that the transport is closed.</returns>
         int Receive(byte[] buffer, int offset, int count);
 
         /// <summary>
