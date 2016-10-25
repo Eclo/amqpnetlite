@@ -1,4 +1,4 @@
-//  ------------------------------------------------------------------------------------
+﻿//  ------------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation
 //  All rights reserved. 
 //  
@@ -14,20 +14,36 @@
 //  See the Apache Version 2.0 License for specific language governing permissions and 
 //  limitations under the License.
 //  ------------------------------------------------------------------------------------
-using VSAssert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
-namespace Test.Amqp
+namespace Test.Common
 {
-    static class Assert
+    using System;
+
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+    class ArgumentAttribute : Attribute
     {
-        public static void IsTrue(bool condition, string message = null)
+        public string Name
         {
-            VSAssert.IsTrue(condition, message ?? "Condition is not true.");
+            get;
+            set;
         }
 
-        public static void AreEqual(object expected, object actual, string message = null)
+        public string Shortcut
         {
-            VSAssert.AreEqual(expected, actual, message ?? "Objects are not equal.");
+            get;
+            set;
+        }
+
+        public string Description
+        {
+            get;
+            set;
+        }
+
+        public object Default
+        {
+            get;
+            set;
         }
     }
 }

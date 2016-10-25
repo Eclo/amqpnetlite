@@ -1,24 +1,32 @@
 - name: Getting Started
   items:
-  - name: Summary
-    href: summary.md
-  - name: Work with Code
-    href: getting_started.md
-- name: Library
+  - name: Hello AMQP!
+    href: hello_amqp.md
+  - name: Building Application
+    href: building_application.md
+  - name: Working with Code
+    href: working_with_code.md
+- name: Using the Library
   items:
+  - name: NuGet Packages
+    href: installation.md
+  - name: Versioning
+    href: versioning.md
+  - name: Serialization
+    href: serialization.md
   - name: Listener
     href: listener.md
+  - name: Buffer Management
+    href: buffer_management.md
   - name: Tracing
     href: tracing.md
   - name: Test Amqp Broker
     href: test_amqp_broker.md
 - name: Use Cases
   items:
-  - name: Azure Service Bus & Event Hubs
-    href: azure_sb_eventhubs.md
-  - name: IoT Hub device endpoints
+  - name: Azure Event Hubs
+    href: azure_eventhubs.md
+  - name: IoT Hub Device Endpoints
     href: device_to_iothub.md
-  - name: IoT Hub service endpoints
+  - name: IoT Hub Service Endpoints
     href: service_to_iothub.md
-- name: Frequently Asked Questions
-  href: faqs.md

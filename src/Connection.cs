@@ -40,15 +40,15 @@ namespace Amqp
             Start,
             HeaderSent,
             OpenPipe,
-            OpenClosePipe,
             HeaderReceived,
             HeaderExchanged,
             OpenSent,
             OpenReceived,
             Opened,
             CloseReceived,
-            ClosePipe,
             CloseSent,
+            OpenClosePipe,
+            ClosePipe,
             End
         }
 
@@ -68,8 +68,8 @@ namespace Amqp
         Session[] remoteSessions;
         ushort channelMax;
         State state;
-        ITransport transport;
         uint maxFrameSize;
+        ITransport writer;
         Pump reader;
         Timer heartBeatTimer;
 
@@ -151,7 +151,7 @@ namespace Amqp
             this.MaxLinksPerSession = amqpSettings.MaxLinksPerSession;
             this.address = address;
             this.onOpened = onOpened;
-            this.transport = new TransportWriter(transport, this.OnIoException);
+            this.writer = new TransportWriter(transport, this.OnIoException);
 
             // after getting the transport, move state to open pipe before starting the pump
             if (open == null)
@@ -241,11 +241,13 @@ namespace Amqp
 
         internal void SendCommand(ushort channel, DescribedList command)
         {
-            this.ThrowIfClosed("Send");
-            ByteBuffer buffer = this.AllocateBuffer(Frame.CmdBufferSize);
-            Frame.Encode(buffer, FrameType.Amqp, channel, command);
-            this.transport.Send(buffer);
-            Trace.WriteLine(TraceLevel.Frame, "SEND (ch={0}) {1}", channel, command);
+            if (command.Descriptor.Code == Codec.Close.Code || this.state < State.CloseSent)
+            {
+                ByteBuffer buffer = this.AllocateBuffer(Frame.CmdBufferSize);
+                Frame.Encode(buffer, FrameType.Amqp, channel, command);
+                this.writer.Send(buffer);
+                Trace.WriteLine(TraceLevel.Frame, "SEND (ch={0}) {1}", channel, command);
+            }
         }
 
         internal int SendCommand(ushort channel, Transfer transfer, bool first, ByteBuffer payload, int reservedBytes)
@@ -282,7 +284,7 @@ namespace Amqp
             }
 
             payload.Complete(payloadSize);
-            this.transport.Send(frameBuffer);
+            this.writer.Send(frameBuffer);
             Trace.WriteLine(TraceLevel.Frame, "SEND (ch={0}) {1} payload {2}", channel, transfer, payloadSize);
 
             return payloadSize;
@@ -336,7 +338,7 @@ namespace Amqp
             try
             {
                 byte[] frame = new byte[] { 0, 0, 0, 8, 2, 0, 0, 0 };
-                thisPtr.transport.Send(new ByteBuffer(frame, 0, frame.Length, frame.Length));
+                thisPtr.writer.Send(new ByteBuffer(frame, 0, frame.Length, frame.Length));
                 Trace.WriteLine(TraceLevel.Frame, "SEND (ch=0) empty");
             }
             catch
@@ -352,7 +354,7 @@ namespace Amqp
             if (WebSocketTransport.MatchScheme(address.Scheme))
             {
                 WebSocketTransport wsTransport = new WebSocketTransport();
-                wsTransport.ConnectAsync(address, null).GetAwaiter().GetResult();
+                wsTransport.ConnectAsync(address, null).ConfigureAwait(false).GetAwaiter().GetResult();
                 transport = wsTransport;
             }
             else
@@ -372,20 +374,20 @@ namespace Amqp
                 transport = new SaslPlainProfile(this.address.User, this.address.Password).Open(this.address.Host, transport);
             }
 
-            this.transport = transport;
+            this.writer = new Writer(transport);
 
             // after getting the transport, move state to open pipe before starting the pump
             this.SendHeader();
             this.SendOpen(open);
             this.state = State.OpenPipe;
 
-            this.reader = new Pump(this);
+            this.reader = new Pump(this, transport);
             this.reader.Start();
         }
 
         void ThrowIfClosed(string operation)
         {
-            if (this.state >= State.ClosePipe)
+            if (this.state >= State.CloseSent)
             {
                 throw new AmqpException(this.Error ??
                     new Error()
@@ -399,7 +401,7 @@ namespace Amqp
         void SendHeader()
         {
             byte[] header = new byte[] { (byte)'A', (byte)'M', (byte)'Q', (byte)'P', 0, 1, 0, 0 };
-            this.transport.Send(new ByteBuffer(header, 0, header.Length, header.Length));
+            this.writer.Send(new ByteBuffer(header, 0, header.Length, header.Length));
             Trace.WriteLine(TraceLevel.Frame, "SEND AMQP 0 1.0.0");
         }
 
@@ -682,9 +684,9 @@ namespace Amqp
                 this.heartBeatTimer.Dispose();
             }
 
-            if (this.transport != null)
+            if (this.writer != null)
             {
-                this.transport.Close();
+                this.writer.Close();
             }
 
             for (int i = 0; i < this.localSessions.Length; i++)
@@ -692,20 +694,81 @@ namespace Amqp
                 var session = this.localSessions[i];
                 if (session != null)
                 {
-                    session.Abort(error);
+                    session.Abort(this.Error);
                 }
             }
-            
-            this.NotifyClosed(error);
+
+            this.NotifyClosed(this.Error);
+        }
+
+        // Writer and Pump are for synchronous transport created from the constructors
+
+#if NETMF
+        sealed class Writer : System.Collections.Queue, ITransport
+#else
+        sealed class Writer : System.Collections.Generic.Queue<ByteBuffer>, ITransport
+#endif
+        {
+            readonly ITransport transport;
+
+            public Writer(ITransport transport)
+            {
+                this.transport = transport;
+            }
+
+            void ITransport.Send(ByteBuffer buffer)
+            {
+                lock (this)
+                {
+                    this.Enqueue(buffer);
+                    if (this.Count > 1)
+                    {
+                        return;
+                    }
+                }
+
+                while (buffer != null)
+                {
+                    this.transport.Send(buffer);
+                    lock (this)
+                    {
+                        this.Dequeue();
+                        if (this.Count > 0)
+                        {
+#if NETMF
+                            buffer = (ByteBuffer)this.Peek();
+#else
+                            buffer = this.Peek();
+#endif
+                        }
+                        else
+                        {
+                            buffer = null;
+                        }
+                    }
+                }
+            }
+
+            int ITransport.Receive(byte[] buffer, int offset, int count)
+            {
+                throw new NotImplementedException();
+            }
+
+            void ITransport.Close()
+            {
+                this.transport.Close();
+            }
         }
 
         sealed class Pump
         {
             readonly Connection connection;
+            readonly ITransport transport;
 
-            public Pump(Connection connection)
+            public Pump(Connection connection, ITransport transport)
             {
                 this.connection = connection;
+                this.transport = transport;
             }
 
             public void Start()
@@ -717,7 +780,7 @@ namespace Amqp
             {
                 try
                 {
-                    ProtocolHeader header = Reader.ReadHeader(this.connection.transport);
+                    ProtocolHeader header = Reader.ReadHeader(this.transport);
                     this.connection.OnHeader(header);
                 }
                 catch (Exception exception)
@@ -731,7 +794,7 @@ namespace Amqp
                 {
                     try
                     {
-                        ByteBuffer buffer = Reader.ReadFrameBuffer(this.connection.transport, sizeBuffer, this.connection.maxFrameSize);
+                        ByteBuffer buffer = Reader.ReadFrameBuffer(this.transport, sizeBuffer, this.connection.maxFrameSize);
                         this.connection.OnFrame(buffer);
                     }
                     catch (Exception exception)

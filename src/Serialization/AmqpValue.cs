@@ -15,35 +15,32 @@
 //  limitations under the License.
 //  ------------------------------------------------------------------------------------
 
-namespace PerfTest
+namespace Amqp.Framing
 {
-    using System;
+    using Amqp.Serialization;
 
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
-    class ArgumentAttribute : Attribute
+    /// <summary>
+    /// An AMQP Value section contains a single strongly typed value.
+    /// </summary>
+    public sealed class AmqpValue<T> : AmqpValue
     {
-        public string Name
+        /// <summary>
+        /// Initializes an AmqpValue object.
+        /// </summary>
+        public AmqpValue(T value)
+            : base()
         {
-            get;
-            set;
+            this.Value = value;
         }
 
-        public string Shortcut
+        /// <summary>
+        /// Writes the value into the buffer using AmqpSerializer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the encoded object.</param>
+        /// <param name="value">The object to be written.</param>
+        protected override void WriteValue(ByteBuffer buffer, object value)
         {
-            get;
-            set;
-        }
-
-        public string Description
-        {
-            get;
-            set;
-        }
-
-        public object Default
-        {
-            get;
-            set;
+            AmqpSerializer.Serialize(buffer, this.Value);
         }
     }
 }
